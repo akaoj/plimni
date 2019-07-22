@@ -1,0 +1,11 @@
+email = {{ cluster_email }}
+rsa-key-size = 4096
+authenticator = standalone
+agree-tos = True
+expand = True
+renew-with-new-domains = True
+non-interactive = True
+deploy-hook = cat $RENEWED_LINEAGE/privkey.pem $RENEWED_LINEAGE/fullchain.pem > $RENEWED_LINEAGE/bundle.pem
+cert-name = {{ cluster_domain }}
+
+domains = {{ cluster_domain }}{% for svc in services if svc.mode == "https" %},{{ svc.fqdn }}{{ "," + svc.fqdn_alias if svc.fqdn_alias else "" }}{% endfor %}

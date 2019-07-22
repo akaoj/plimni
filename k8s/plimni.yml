@@ -1,0 +1,348 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: plimni
+
+# XXX You have to configure at least this ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plimni
+  namespace: plimni
+data:
+  CLUSTER_DOMAIN: "mydomain.com"  # Set a domain which resolves to your cluster
+  CLUSTER_EMAIL: ""  # Set the email Certbot will register with
+  CLUSTER_BRANCH: "master"  # Set the branch Plimni will use for aliases
+  SLEEP_TIME: "5"  # You can change the "responsiveness" of Plimni with this value
+
+# XXX Thanks
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: plimni
+  namespace: plimni
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: plimni
+  namespace: plimni
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints", "services"]
+    verbs: ["get", "watch", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: plimni
+  namespace: plimni
+subjects:
+  - kind: ServiceAccount
+    name: plimni
+    namespace: plimni
+roleRef:
+  kind: ClusterRole
+  name: plimni
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haproxy
+  namespace: plimni
+  labels:
+    app: haproxy
+spec:
+  type: ClusterIP
+  externalIPs:
+    - ""  # XXX: Make sure to put your loadbalancer(s) IP(s) here
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 443
+      protocol: TCP
+      name: https
+  selector:
+    app: haproxy
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy
+  namespace: plimni
+data:
+  haproxy.cfg: |
+    global
+      log stdout local0
+      master-worker
+      daemon
+      pidfile /usr/local/etc/haproxy/conf.d/haproxy.pid
+      maxconn 50000
+      nbthread 2
+      stats socket /usr/local/etc/haproxy/conf.d/stats.sock mode 666 level admin
+      # Enforce strong algorithms
+      ssl-default-bind-ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
+      ssl-default-bind-options no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets
+      ssl-default-server-ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
+      ssl-default-server-options no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets
+    defaults
+      log global
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haproxy
+  namespace: plimni
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haproxy
+  template:
+    metadata:
+      labels:
+        app: haproxy
+    spec:
+      # Run only on the loadbalancers
+      nodeSelector:
+        type: lb
+      # Tolerate a `lb=<whatever>:NoExecute` taint
+      # This is to ensure we will only have the loadbalancer running on the lb
+      tolerations:
+        - key: lb
+          operator: Exists
+          effect: NoExecute
+      serviceAccountName: plimni  # allow plimni to list the endpoints
+      shareProcessNamespace: true  # allow plimni to see HAProxy PID and send it signals
+
+      containers:
+
+        - name: haproxy
+          image: haproxy:2.0.1
+          args:
+            - "haproxy"
+            - "-f"
+            - "/usr/local/etc/haproxy/haproxy.cfg"
+            - "-f"
+            - "/usr/local/etc/haproxy/conf.d/services.cfg"
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+            - containerPort: 443
+              name: https
+              protocol: TCP
+          volumeMounts:
+            - name: haproxy-config
+              mountPath: /usr/local/etc/haproxy/
+            - name: haproxy-certs
+              mountPath: /usr/local/etc/haproxy/certs
+            - name: haproxy-conf
+              mountPath: /usr/local/etc/haproxy/conf.d
+            - name: haproxy-sanitize
+              mountPath: /usr/local/etc/haproxy/sanitize.d
+          resources:
+            limits:
+              memory: "7Gi"
+              cpu: "3"
+            requests:
+              memory: "7Gi"
+              cpu: "3"
+
+        - name: plimni
+          image: akaoj/plimni:master
+          args:
+            - "python3"
+            - "-m"
+            - "plimni"
+            - "--orchestrator"
+            - "k8s"
+            - "--cluster-domain"
+            - "$(CLUSTER_DOMAIN)"
+            - "--cluster-email"
+            - "$(CLUSTER_EMAIL)"
+            - "--cluster-branch"
+            - "$(CLUSTER_BRANCH)"
+            - "--sleep-time"
+            - "$(SLEEP_TIME)"
+          env:
+            - name: CLUSTER_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: plimni
+                  key: CLUSTER_DOMAIN
+            - name: CLUSTER_BRANCH
+              valueFrom:
+                configMapKeyRef:
+                  name: plimni
+                  key: CLUSTER_BRANCH
+            - name: SLEEP_TIME
+              valueFrom:
+                configMapKeyRef:
+                  name: plimni
+                  key: SLEEP_TIME
+          volumeMounts:
+            - name: haproxy-certs
+              mountPath: /usr/local/etc/haproxy/certs
+            - name: haproxy-conf
+              mountPath: /usr/local/etc/haproxy/conf.d
+            - name: haproxy-sanitize
+              mountPath: /usr/local/etc/haproxy/sanitize.d
+          resources:
+            limits:
+              memory: "100Mi"
+              cpu: "0.1"
+            requests:
+              memory: "100Mi"
+              cpu: "0.1"
+
+        - name: haproxy-prometheus-metrics
+          image: quay.io/prometheus/haproxy-exporter:v0.10.0
+          args: ["--haproxy.scrape-uri=unix:/usr/local/etc/haproxy/conf.d/stats.sock"]
+          ports:
+            - containerPort: 9101
+              name: metrics
+              protocol: TCP
+          volumeMounts:
+            - name: haproxy-conf
+              mountPath: /usr/local/etc/haproxy/conf.d
+          resources:
+            limits:
+              memory: "100Mi"
+              cpu: "0.1"
+            requests:
+              memory: "100Mi"
+              cpu: "0.1"
+
+      initContainers:
+
+        - name: plimni-init
+          image: akaoj/plimni:master
+          args:
+            - "python3"
+            - "-m"
+            - "plimni"
+            - "--orchestrator"
+            - "k8s"
+            - "--cluster-domain"
+            - "$(CLUSTER_DOMAIN)"
+            - "--cluster-branch"
+            - "$(CLUSTER_BRANCH)"
+            - "--init"
+          env:
+            - name: CLUSTER_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: plimni
+                  key: CLUSTER_DOMAIN
+            - name: CLUSTER_BRANCH
+              valueFrom:
+                configMapKeyRef:
+                  name: plimni
+                  key: CLUSTER_BRANCH
+          volumeMounts:
+            - name: haproxy-certs
+              mountPath: /usr/local/etc/haproxy/certs
+            - name: haproxy-conf
+              mountPath: /usr/local/etc/haproxy/conf.d
+            - name: haproxy-sanitize
+              mountPath: /usr/local/etc/haproxy/sanitize.d
+          resources:
+            limits:
+              memory: "100Mi"
+              cpu: "0.1"
+            requests:
+              memory: "100Mi"
+              cpu: "0.1"
+
+      volumes:
+        - name: haproxy-config
+          configMap:
+            name: haproxy
+            items:
+              - key: haproxy.cfg
+                path: haproxy.cfg
+        - name: haproxy-conf
+          emptyDir: {}
+        - name: haproxy-sanitize
+          emptyDir: {}
+        - name: haproxy-certs
+          hostPath:
+            path: "/volumes/certbot-certificates"
+            type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: certbot
+  namespace: plimni
+  labels:
+    app: certbot
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: certbot
+
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: certbot
+  namespace: plimni
+spec:
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 10
+  schedule: "* * * * *"
+  jobTemplate:
+    metadata:
+      labels:
+        app: certbot
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: certbot
+        spec:
+          restartPolicy: Never
+          tolerations:
+            - key: lb
+              operator: Exists
+              effect: NoExecute
+          nodeSelector:
+            type: lb
+          containers:
+            - name: certbot
+              image: "certbot/certbot:v0.31.0"
+              command: ["certbot", "certonly", "-c", "/etc/letsencrypt/cli.ini"]
+              ports:
+                - containerPort: 80
+                  name: http
+                  protocol: TCP
+              volumeMounts:
+                - name: haproxy-certs
+                  mountPath: /etc/letsencrypt
+          volumes:
+            - name: haproxy-certs
+              hostPath:
+                path: "/volumes/certbot-certificates"
+                type: DirectoryOrCreate
