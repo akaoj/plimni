@@ -90,6 +90,9 @@ class Service():
         else:
             raise ValueError("The mode must be one of http or https")
 
+        # Boolean used to know if we're sanitizing this service
+        self.sanitizes = False
+
         if http_sanitize_codes:
             if not http_sanitize_return:
                 raise ValueError("You have to provide the sanitized value if "
@@ -104,6 +107,7 @@ class Service():
                     raise ValueError("The code {} to sanitize is not valid"
                                      "".format(code))
 
+            self.sanitizes = True
             self.http_sanitize_codes = http_sanitize_codes
             self.http_sanitize_return = http_sanitize_return
 

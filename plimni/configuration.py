@@ -95,6 +95,9 @@ class Configuration():
         configs = {}
 
         for svc in services:
+            if not svc.sanitizes:
+                continue
+
             # We always return the same sanitized return code
             rendered = template.render(svc.http_sanitize_return)
 
