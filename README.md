@@ -130,7 +130,7 @@ The options needed by Plimni are available with `plimni --help` (see the command
 
 | Option | Required? | Example | Description |
 | --- | --- | --- | --- |
-| `-o`<br/>`--orchestrator` | yes | "nomad" | Tells Plimni in which cluster it's running. |
+| `-o`<br/>`--orchestrator` | yes (`k8s` / `nomad`) | "nomad" | Tells Plimni in which cluster it's running. |
 | `-d`<br/>`--cluster-domain` | yes | "mydomain.com" | A domain which resolves to your loadbalancer Plimni is running on. |
 | `-e`<br/>`--cluster-email` | no | "admin@domain.com" | The email used by Certbot to create an account at LetsEncrypt.<br/>Defaults to `postmaster@<cluster-domain>`. |
 | `-b`<br/>`--cluster-branch` | no | The branch considered the default branch for short URLs.<br/>Default to `master`. |
@@ -159,8 +159,8 @@ Depending on your orchestrator, you will need to set either annotations (Kuberne
 | `plimni.io/branch` | `<str>` | `"feat/new-user"` | The branch the service is on. Used to generate the FQDN Plimni will use for this service. |
 | `plimni.io/fqdn` | `<str>` | `blog.mysite.com"` | If you want to use a completely different FQDN than your `cluster_domain`, you can directly specify here the FQDN to answer to. |
 | `plimni.io/mode` | `http`/`https` | `"https"` | HTTP for HTTP-only traffic, HTTPS for both HTTP and HTTPS.<br/>Defaults to `https`. |
-| `plimni.io/http-port` | `<int>` | `"8080"` | The HTTP port to use.<br/>Defaults to `80`. |
-| `plimni.io/https-port` | `<int>` | `"8443"` | The HTTPS port to use, if HTTPS mode.<br/>Defaults to `443`. |
+| `plimni.io/http-port` | `<int>` | `"8080"` | The HTTP port to use.<br/>Defaults to `80`.<br/><b>Not implemented yet.</b> |
+| `plimni.io/https-port` | `<int>` | `"8443"` | The HTTPS port to use, if HTTPS mode.<br/>Defaults to `443`.<br/><b>Not implemented yet.</b> |
 | `plimni.io/http-sanitize-codes` | `<[]int>` | `"500,502,503,504"` | The codes (sent back by the service) you want to replace (= sanitize). |
 | `plimni.io/http-sanitize-return` | `<int>` | `"202"` | The code you want to replace these sanitized values with. Mandatory if `http-sanitize-codes` is supplied. |
 
