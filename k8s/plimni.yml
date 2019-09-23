@@ -137,7 +137,7 @@ spec:
       containers:
 
         - name: haproxy
-          image: haproxy:2.0.1
+          image: haproxy:2.0.6
           args:
             - "haproxy"
             - "-f"

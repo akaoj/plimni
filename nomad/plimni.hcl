@@ -15,7 +15,7 @@ job "plimni" {
 			driver = "docker"
 
 			config {
-				image = "haproxy:2.0.1"
+				image = "haproxy:2.0.6"
 				args = ["bash", "-c", "touch ${HAP_SRV_CONF} && haproxy -f ${NOMAD_TASK_DIR}/haproxy.cfg -f ${HAP_SRV_CONF}"]
 				network_mode = "host"
 				pid_mode = "host"
