@@ -128,6 +128,12 @@ spec:
       serviceAccountName: plimni  # allow plimni to list the endpoints
       shareProcessNamespace: true  # allow plimni to see HAProxy PID and send it signals
 
+      # HAProxy will probably need to handle a lot of connections
+      securityContext:
+        sysctls:
+          - name: net.core.somaxconn
+            value: "16384"
+
       containers:
 
         - name: haproxy

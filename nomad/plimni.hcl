@@ -19,6 +19,12 @@ job "plimni" {
 				args = ["bash", "-c", "touch ${HAP_SRV_CONF} && haproxy -f ${NOMAD_TASK_DIR}/haproxy.cfg -f ${HAP_SRV_CONF}"]
 				network_mode = "host"
 				pid_mode = "host"
+
+				# HAProxy will probably need to handle a lot of connections
+				sysctl {
+					net.core.somaxconn = "16384"
+				}
+
 				volumes = [
 					"/volumes/certs/:/certs",
 				]
