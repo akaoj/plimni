@@ -98,7 +98,12 @@ To add the `lb` type: `$ kubectl label nodes <loadbalancer-name> type=lb`.
 To add the taint: `$ kubectl taint nodes <loadbalancer-name> lb=true:NoExecute` (this will evict all running pods from
 your node).
 
-Note that this will also create a `plimni` namespace.
+The Kubernetes deployment file will also change the security context of the HAProxy pod; make sure to enable the
+"unsafe sysctl" `net.core.somaxconn` on your Kubelet (see
+[here](https://kubernetes.io/docs/tasks/administer-cluster/sysctl-cluster/#enabling-unsafe-sysctls) for more
+information).
+
+This will also create a `plimni` namespace.
 
 Once you're good with the configuration, deploy it: `$ kubectl apply -f k8s/plimni.yml`
 
