@@ -34,7 +34,7 @@ job "plimni" {
 				change_signal = "SIGUSR2"
 				data = <<EOF
 global
-	log stdout format raw daemon info
+	log stderr format rfc5424 local0 info
 	master-worker
 	pidfile {{ env "NOMAD_ALLOC_DIR" }}/data/haproxy.pid
 	maxconn 50000

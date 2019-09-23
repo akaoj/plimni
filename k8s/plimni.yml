@@ -85,7 +85,7 @@ metadata:
 data:
   haproxy.cfg: |
     global
-      log stdout local0
+      log stderr format rfc5424 local0 info
       master-worker
       daemon
       pidfile /usr/local/etc/haproxy/conf.d/haproxy.pid

@@ -4,6 +4,7 @@ frontend front
 	bind *:443 ssl crt {{ https_cert_file }} alpn h2,http/1.1
 {% endif %}
 	mode http
+	option httplog
 
 	timeout client 10s
 	timeout http-request 30s
