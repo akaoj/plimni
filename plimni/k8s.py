@@ -65,7 +65,8 @@ class KubernetesClient(Client):
                 port = subset.ports[0].port
 
                 if subset.addresses:
-                    for ip_addr in subset.addresses:
+                    for addr in subset.addresses:
+                        ip_addr = addr.ip
                         print("Adding backend {}:{}".format(ip_addr, port))
                         s_backends.append((ip_addr, port))
 
