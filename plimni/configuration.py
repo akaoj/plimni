@@ -13,6 +13,7 @@ PREFIX = "plimni.io"
 class Tags():
     EXPOSE = "{}/expose".format(PREFIX)
     BRANCH = "{}/branch".format(PREFIX)
+    NAME = "{}/name".format(PREFIX)
     FQDN = "{}/fqdn".format(PREFIX)
     MODE = "{}/mode".format(PREFIX)
     HTTP_PORT = "{}/http-port".format(PREFIX)

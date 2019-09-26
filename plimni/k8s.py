@@ -35,7 +35,7 @@ class KubernetesClient(Client):
                 continue
 
             s_expose = annotations.get(Tags.EXPOSE)
-            s_name = service_name
+            s_name = annotations.get(Tags.NAME)
             s_branch = annotations.get(Tags.BRANCH)
             s_fqdn = annotations.get(Tags.FQDN)
             s_mode = annotations.get(Tags.MODE)
@@ -46,11 +46,15 @@ class KubernetesClient(Client):
                 s_http_sanitize_codes = s_http_sanitize_codes.split(",")
             s_http_sanitize_return = annotations.get(Tags.HTTP_SANITIZE_RETURN)
 
+            # If no annotation is defined for the name, use the service name
+            if not s_name:
+                s_name = service_name
+
             # Retrieve backends
             print("Annotations processed, retrieving endpoints...")
 
             endpoint = self._instance.read_namespaced_endpoints(
-                name=s_name,
+                name=service_name,
                 namespace="default",
             )
 

@@ -13,8 +13,8 @@ class Service():
                        to quickly disable an endpoint by changing the service
                        annotation / tags without having to actually remove the
                        backends. Defaults to `False`.
-        branch (str): The branch of the service. Defaults to `master`. `name`
-                      is needed as well if you provide this parameter.
+        name (str): The name of the service.
+        branch (str): The branch of the service. Defaults to `master`.
         fqdn (str): The FQDN Plimni has to answer to. Only available in `http`
                     or `https` modes.
         mode (str): `http` for HTTP-only or `https` for both HTTP and HTTPS.
@@ -46,7 +46,6 @@ class Service():
         expose = False if expose is None else (
             True if expose.lower() == "true" else False
         )
-        name = "" if name is None else name
         branch = "master" if branch is None else branch
         fqdn = "" if fqdn is None else fqdn
         mode = "https" if mode is None else mode
@@ -60,6 +59,9 @@ class Service():
 
         # Check and process data
         self.expose = expose
+
+        if not name:
+            raise ValueError("The name must be set")
 
         self.name = name
 
