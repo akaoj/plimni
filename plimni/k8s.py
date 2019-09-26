@@ -96,7 +96,7 @@ class KubernetesClient(Client):
         return services_computed
 
     def get_certbot_url(self, private_ip: str) -> str:
-        return "_http._tcp.certbot.loadbalancer.svc.cluster.local"
+        return "_http._tcp.certbot.plimni.svc.cluster.local"
 
 
 def get_client() -> Client:
