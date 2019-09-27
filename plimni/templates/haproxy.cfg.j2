@@ -43,6 +43,7 @@ backend {{ svc.fqdn }}
 
 	balance leastconn
 	option forwardfor
+	option tcp-check
 	http-request set-header X-Forwarded-Port %[dst_port]
 	http-request add-header X-Forwarded-Proto https if { ssl_fc }
 
