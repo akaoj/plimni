@@ -100,7 +100,9 @@ class Configuration():
                 continue
 
             # We always return the same sanitized return code
-            rendered = template.render(svc.http_sanitize_return)
+            rendered = template.render(
+                code=svc.http_sanitize_return
+            )
 
             for code in svc.http_sanitize_codes:
                 configs[svc.fqdn + "-" + code] = rendered
