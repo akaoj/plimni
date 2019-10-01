@@ -41,7 +41,7 @@ class NomadClient(Client):
             }
 
             s_expose = tags.get(Tags.EXPOSE)
-            s_name = service_name
+            s_name = tags.get(Tags.NAME)
             s_branch = tags.get(Tags.BRANCH)
             s_fqdn = tags.get(Tags.FQDN)
             s_mode = tags.get(Tags.MODE)
@@ -51,6 +51,10 @@ class NomadClient(Client):
             if s_http_sanitize_codes is not None:
                 s_http_sanitize_codes = s_http_sanitize_codes.split(",")
             s_http_sanitize_return = tags.get(Tags.HTTP_SANITIZE_RETURN)
+
+            # If no annotation is defined for the name, use the service name
+            if not s_name:
+                s_name = service_name
 
             # Retrieve backends
             print("Tags processed, retrieving endpoints...")
