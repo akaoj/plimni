@@ -15,9 +15,9 @@ frontend front
 {% for svc in services | sort(attribute="name") %}
   {%- if svc.mode in ("http", "https") %}
 	acl {{ svc.fqdn }} hdr(host) -i {{ svc.fqdn }}
-    {%- if svc.fqdn_alias %}
-	acl {{ svc.fqdn }} hdr(host) -i {{ svc.fqdn_alias }}
-    {%- endif %}
+    {%- for fqdn in svc.additional_fqdns %}
+	acl {{ svc.fqdn }} hdr(host) -i {{ fqdn }}
+    {%- endfor %}
 	use_backend {{ svc.fqdn }} if {{ svc.fqdn }}
   {%- endif %}
 {% endfor %}

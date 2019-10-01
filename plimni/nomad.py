@@ -1,7 +1,7 @@
 from consul import Consul
 
+from plimni.tags import PREFIX, Tags
 from .clients import Client
-from .configuration import PREFIX, Tags
 from .services import Service
 
 
@@ -44,6 +44,9 @@ class NomadClient(Client):
             s_name = tags.get(Tags.NAME)
             s_branch = tags.get(Tags.BRANCH)
             s_fqdn = tags.get(Tags.FQDN)
+            s_additional_fqdns = tags.get(Tags.ADDITIONAL_FQDNS)
+            if s_additional_fqdns is not None:
+                s_additional_fqdns = s_additional_fqdns.split(",")
             s_mode = tags.get(Tags.MODE)
             s_http_port = tags.get(Tags.HTTP_PORT)
             s_https_port = tags.get(Tags.HTTPS_PORT)
@@ -76,6 +79,7 @@ class NomadClient(Client):
                     name=s_name,
                     branch=s_branch,
                     fqdn=s_fqdn,
+                    additional_fqdns=s_additional_fqdns,
                     mode=s_mode,
                     http_port=s_http_port,
                     https_port=s_https_port,

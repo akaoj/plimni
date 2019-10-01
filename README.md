@@ -58,13 +58,18 @@ Plimni.
 
 ## Automatic certificate issuance and renewal (for HTTPS services)
 
-If you set the `plimni.io/mode` flag to `https` for a service, Plimni will ask Certbot to automatically generate a
-certificate for this service and will also automatically configure HAProxy to serve this certificate.
+If you set the `plimni.io/mode` flag to `https` for a service (or let it blank, as `https` is the default), Plimni will
+ask Certbot to automatically generate a certificate for this service and will also automatically configure HAProxy to
+serve this certificate.
 
 You have nothing else to do than set a flag.
 
-Note that all your services share the same certificate (there isn't one certificate per service but one certificate for
-the whole cluster).
+Note that **all your services share the same certificate** (there isn't one certificate per service but one certificate
+for the whole cluster). Note also that the `--cluster-domain` will be **the main domain in the Lets Encrypt
+certificate**, which means **you have to set the `--cluster-domain` to a domain which always resolves to your
+loadbalancer**. When you define services, however, you can individually set completely different FQDN for these services
+(with the `plimni.io/fqdn` and `plimni.io/additional-fqdns` annotation/tag) and Plimni will add these FQDNs in the
+cluster TLS certificate.
 
 
 ## Automatic routing based on your services branches
@@ -136,7 +141,7 @@ The options needed by Plimni are available with `plimni --help` (see the command
 | Option | Required? | Example | Description |
 | --- | --- | --- | --- |
 | `-o`<br/>`--orchestrator` | yes (`k8s` / `nomad`) | "nomad" | Tells Plimni in which cluster it's running. |
-| `-d`<br/>`--cluster-domain` | yes | "mydomain.com" | A domain which resolves to your loadbalancer Plimni is running on. |
+| `-d`<br/>`--cluster-domain` | yes | "mydomain.com" | A domain which resolves to your loadbalancer Plimni is running on.<br/>This is the domain Plimni will use to generate the TLS key from Certbot |
 | `-e`<br/>`--cluster-email` | no | "admin@domain.com" | The email used by Certbot to create an account at LetsEncrypt.<br/>Defaults to `postmaster@<cluster-domain>`. |
 | `-b`<br/>`--cluster-branch` | no | The branch considered the default branch for short URLs.<br/>Default to `master`. |
 | `--private-ip` | yes for Nomad | Nomad only. Put your loadbalancer private IP (or the IP Nomad binds services to). |
@@ -163,7 +168,8 @@ Depending on your orchestrator, you will need to set either annotations (Kuberne
 | `plimni.io/expose` | `true`/`false` | `"true"` | Whether or not to route traffic to the service.<br/>Useful to quickly unplug a service. |
 | `plimni.io/name` | `<str>` | `"api"` | The name of the service. Used to generate the FQDN Plimni will use for this service.<br/>Defaults to the Kubernetes Service name. |
 | `plimni.io/branch` | `<str>` | `"feat/new-user"` | The branch the service is on. Used to generate the FQDN Plimni will use for this service. |
-| `plimni.io/fqdn` | `<str>` | `blog.mysite.com"` | If you want to use a completely different FQDN than your `cluster_domain`, you can directly specify here the FQDN to answer to. |
+| `plimni.io/fqdn` | `<str>` | `blog.mysite.com"` | Instead of relying on the auto-generated FQDN from service name, branch and cluster domain, you can directly specify under which FQDN the service will be available. The `additional-fqdns` annotation/tag should be preferred if you want to expose your service under different FQDNs than the auto-generated ones.<br/>You will most likely use this annotation to define the production-ready, stable and public FQDN you want your clients to use. |
+| `plimni.io/additional-fqdns` | `<[]str>` | `blog.mysite.com,blog.me"` | If you want to use completely different FQDNs than those Plimni automatically generate from the name, branch and cluster name, you can directly specify here the FQDNs to answer to. Your service will be available on all FQDNs (generated and additional). If you are in `https` mode, certificates will be requested for all FQDNs. |
 | `plimni.io/mode` | `http`/`https` | `"https"` | HTTP for HTTP-only traffic, HTTPS for both HTTP and HTTPS.<br/>Defaults to `https`. |
 | `plimni.io/http-port` | `<int>` | `"8080"` | The HTTP port to use.<br/>Defaults to `80`.<br/><b>Not implemented yet.</b> |
 | `plimni.io/https-port` | `<int>` | `"8443"` | The HTTPS port to use, if HTTPS mode.<br/>Defaults to `443`.<br/><b>Not implemented yet.</b> |

@@ -1,5 +1,7 @@
 import re
 
+from plimni.tags import Tags
+
 
 class Service():
     """
@@ -17,6 +19,9 @@ class Service():
         branch (str): The branch of the service. Defaults to `master`.
         fqdn (str): The FQDN Plimni has to answer to. Only available in `http`
                     or `https` modes.
+        additional_fqdns ([]str): A list of additional FQDN Plimni will answer
+                                  to. Only available in `http` or `https`
+                                  modes.
         mode (str): `http` for HTTP-only or `https` for both HTTP and HTTPS.
         http_port (int): The port to listen to for HTTP requests (defaults to
                          80).
@@ -30,16 +35,12 @@ class Service():
                                     catched.
         backends ([]tuple): A list (ip,port) couples of backends for this
                             service.
-
-    Attributes: same as Args, plus:
-        fqdn_alias (str): The short FQDN (only available if the service branch
-                          is the same as the cluster main branch).
     """
     STR_REGEX = re.compile(r"^[a-zA-Z0-9-_.]+$")
     CODES_REGEX = re.compile(r"^[1-5][0-9]{2}$")
 
     def __init__(self, cluster_branch, cluster_domain, expose, name,
-                 branch, fqdn, mode, http_port, https_port,
+                 branch, fqdn, additional_fqdns, mode, http_port, https_port,
                  http_sanitize_codes, http_sanitize_return, backends,
                  ):
         # Clean data
@@ -48,6 +49,7 @@ class Service():
         )
         branch = "master" if branch is None else branch
         fqdn = "" if fqdn is None else fqdn
+        additional_fqdns = [] if additional_fqdns is None else additional_fqdns
         mode = "https" if mode is None else mode
         http_port = 80 if http_port is None else int(http_port)
         https_port = 443 if https_port is None else int(https_port)
@@ -65,6 +67,16 @@ class Service():
 
         self.name = name
 
+        self.additional_fqdns = additional_fqdns
+
+        if self.additional_fqdns:
+            for f in self.additional_fqdns:
+                if not Service.STR_REGEX.search(f):
+                    raise ValueError("{} is not valid (only alphanumeric "
+                                     "characters and dash, underscore and dot "
+                                     "are allowed"
+                                     "".format(Tags.ADDITIONAL_FQDNS))
+
         if fqdn:
             if not Service.STR_REGEX.search(fqdn):
                 raise ValueError("`fqdn` is not valid (only alphanumeric "
@@ -81,7 +93,7 @@ class Service():
             )
 
             if self.branch == cluster_branch:
-                self.fqdn_alias = self.name + "." + cluster_domain
+                self.additional_fqdns.append(self.name + "." + cluster_domain)
 
         self.mode = mode
 

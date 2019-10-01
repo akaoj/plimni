@@ -1,7 +1,7 @@
 from kubernetes import client, config
 
+from plimni.tags import PREFIX, Tags
 from .clients import Client
-from .configuration import PREFIX, Tags
 from .services import Service
 
 
@@ -38,6 +38,9 @@ class KubernetesClient(Client):
             s_name = annotations.get(Tags.NAME)
             s_branch = annotations.get(Tags.BRANCH)
             s_fqdn = annotations.get(Tags.FQDN)
+            s_additional_fqdns = annotations.get(Tags.ADDITIONAL_FQDNS)
+            if s_additional_fqdns is not None:
+                s_additional_fqdns = s_additional_fqdns.split(",")
             s_mode = annotations.get(Tags.MODE)
             s_http_port = annotations.get(Tags.HTTP_PORT)
             s_https_port = annotations.get(Tags.HTTPS_PORT)
@@ -84,6 +87,7 @@ class KubernetesClient(Client):
                     name=s_name,
                     branch=s_branch,
                     fqdn=s_fqdn,
+                    additional_fqdns=s_additional_fqdns,
                     mode=s_mode,
                     http_port=s_http_port,
                     https_port=s_https_port,
