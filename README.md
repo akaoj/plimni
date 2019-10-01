@@ -161,6 +161,7 @@ Depending on your orchestrator, you will need to set either annotations (Kuberne
 | Key | Value | Example | Description |
 | --- | --- | --- | --- |
 | `plimni.io/expose` | `true`/`false` | `"true"` | Whether or not to route traffic to the service.<br/>Useful to quickly unplug a service. |
+| `plimni.io/name` | `<str>` | `"api"` | The name of the service. Used to generate the FQDN Plimni will use for this service.<br/>Defaults to the Kubernetes Service name. |
 | `plimni.io/branch` | `<str>` | `"feat/new-user"` | The branch the service is on. Used to generate the FQDN Plimni will use for this service. |
 | `plimni.io/fqdn` | `<str>` | `blog.mysite.com"` | If you want to use a completely different FQDN than your `cluster_domain`, you can directly specify here the FQDN to answer to. |
 | `plimni.io/mode` | `http`/`https` | `"https"` | HTTP for HTTP-only traffic, HTTPS for both HTTP and HTTPS.<br/>Defaults to `https`. |
